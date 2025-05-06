@@ -1,0 +1,951 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User and Authentication Models
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         Role
+  isActive     Boolean   @default(true)
+  branch       Branch?   @relation(fields: [branchId], references: [id])
+  branchId     String?
+  pharmacy     Pharmacy? @relation(fields: [pharmacyId], references: [id])
+  pharmacyId   String?
+  refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]  // Added opposite relation field for PasswordResetToken
+  lastLogin    DateTime?
+  createdSales Sale[]    @relation("SaleCreator")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  deletedAt    DateTime?
+  updatedBy    String?
+  profileImageUrl   String?        // Added profile image URL
+  phoneNumber       String?        // Added phone number
+  preferredLanguage String?        // Added language preference
+  theme             String?        // Added theme preference (light/dark)
+  notifications     Notification[] // Added relation to notifications
+  
+
+  @@index([email])
+  @@index([role])
+  @@index([branchId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  revokedAt DateTime?
+  
+  @@index([userId])
+}
+
+enum Role {
+  ADMIN
+  PHARMACIST
+  ASSISTANT
+  OWNER
+  MANAGER
+}
+
+// Pharmacy and Branch Models
+model Pharmacy {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  phone     String?
+  email     String?
+  license   String?
+  taxId     String?
+  isActive  Boolean  @default(true)
+  branches  Branch[]
+  users     User[]
+    // Add products relation
+    products  Product[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    createdBy String?
+    updatedBy String?
+    logoUrl       String?  // Added logo URL
+    website       String?  // Added website
+    openingHours  String?  // Added opening hours
+    currencyCode  String?  // Added currency code
+    subscription  Subscription? // Added subscription relation
+  
+    @@index([name])
+}
+
+model Branch {
+  id                 String          @id @default(uuid())
+  name               String
+  location           String
+  phone              String?
+  email              String?
+  managerEmail       String?
+  isActive           Boolean         @default(true)
+  pharmacy           Pharmacy        @relation(fields: [pharmacyId], references: [id])
+  pharmacyId         String
+  users              User[]
+  stock              Batch[]
+  sales              Sale[]
+  prescriptions      Prescription[]
+  stockTransfersFrom StockTransfer[] @relation("FromBranch")
+  stockTransfersTo   StockTransfer[] @relation("ToBranch")
+  purchaseOrders     PurchaseOrder[]
+  expenses           Expense[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  createdBy          String?
+  updatedBy          String?
+  openingHours       String?         // Added opening hours
+  gpsCoordinates     String?        // Added GPS coordinates
+
+  @@index([pharmacyId])
+  @@index([name])
+}
+
+// Product and Inventory Models
+model Product {
+  id                   String             @id @default(uuid())
+  name                 String
+  genericName          String
+  dosageForm           String
+  strength             String
+  barcode              String?            @unique
+  requiresPrescription Boolean            @default(false)
+  controlled           Boolean            @default(false)
+  unitPrice            Float
+  reorderLevel         Int                @default(10)
+  category             String?
+  manufacturer         String?
+  description          String?
+  imageUrl             String?
+  isActive             Boolean            @default(true)
+  supplier             Supplier?          @relation(fields: [supplierId], references: [id])
+  supplierId           String?
+    // Add pharmacy relation
+    pharmacy             Pharmacy           @relation(fields: [pharmacyId], references: [id])
+    pharmacyId           String
+    batches              Batch[]
+    prescriptionItems    PrescriptionItem[]
+    transferItems        TransferItem[]
+    planCoverageItems    PlanCoverageItem[]
+    purchaseItems        PurchaseItem[]
+    createdAt            DateTime           @default(now())
+    updatedAt            DateTime           @updatedAt
+    createdBy            String?
+    updatedBy            String?
+    tags                 String[]           // Added tags for better categorization
+    sideEffects          String?            // Added side effects information
+    contraindications    String?            // Added contraindications
+    storageInstructions  String?            // Added storage instructions
+  
+    @@index([name])
+    @@index([genericName])
+    @@index([controlled])
+    @@index([requiresPrescription])
+    @@index([supplierId])
+    @@index([category])
+    @@index([pharmacyId])  // Add index for pharmacyId
+  }
+
+model Batch {
+  id           String     @id @default(uuid())
+  product      Product    @relation(fields: [productId], references: [id])
+  productId    String
+  branch       Branch     @relation(fields: [branchId], references: [id])
+  branchId     String
+  quantity     Int
+  batchNumber  String
+  expiryDate   DateTime
+  costPrice    Float
+  sellingPrice Float
+  saleItems    SaleItem[]
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  createdBy    String?
+  updatedBy    String?
+
+  @@index([productId])
+  @@index([branchId])
+  @@index([expiryDate])
+  @@index([batchNumber])
+}
+
+model Supplier {
+  id             String          @id @default(uuid())
+  name           String
+  phone          String?
+  email          String?
+  address        String?
+  contactPerson  String?
+  isActive       Boolean         @default(true)
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdBy      String?
+  updatedBy      String?
+
+  @@index([name])
+}
+
+// Sales and Prescription Models
+model Sale {
+  id                 String          @id @default(uuid())
+  invoiceNumber      String?         @unique
+  branch             Branch          @relation(fields: [branchId], references: [id])
+  branchId           String
+  soldBy             User            @relation("SaleCreator", fields: [soldById], references: [id])
+  soldById           String
+  customer           String?
+  patientId          String?
+  patient            Patient?        @relation(fields: [patientId], references: [id])
+  total              Float
+  discount           Float?
+  tax                Float?
+  paymentMethod      PaymentMethod
+  paymentStatus      PaymentStatus   @default(PAID)
+  prescriptionId     String?
+  prescription       Prescription?   @relation(fields: [prescriptionId], references: [id])
+  saleItems          SaleItem[]
+  insuranceClaim     InsuranceClaim?
+  patientInsuranceId String?
+  patientPaid        Float?
+  insurancePaid      Float?
+  payment            Payment?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  createdBy          String?
+  updatedBy          String?
+
+  @@index([branchId])
+  @@index([soldById])
+  @@index([patientId])
+  @@index([prescriptionId])
+  @@index([createdAt])
+  @@index([paymentMethod])
+  @@index([paymentStatus])
+}
+
+model SaleItem {
+  id                String               @id @default(uuid())
+  sale              Sale                 @relation(fields: [saleId], references: [id])
+  saleId            String
+  batch             Batch                @relation(fields: [batchId], references: [id])
+  batchId           String
+  quantity          Int
+  unitPrice         Float
+  discount          Float?
+  total             Float
+  insuranceCoverage Float?
+  claimItems        InsuranceClaimItem[]
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  @@index([saleId])
+  @@index([batchId])
+}
+
+enum PaymentMethod {
+  CASH
+  MOMO
+  INSURANCE
+  CREDIT
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  PARTIAL
+  CANCELLED
+}
+
+// Patient and Prescription Models
+model Patient {
+  id             String             @id @default(uuid())
+  name           String
+  gender         String
+  dob            DateTime?
+  phone          String?
+  email          String?
+  address        String?
+  nationalId     String?
+  insurancePlans PatientInsurance[]
+  prescriptions  Prescription[]
+  sales          Sale[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  createdBy      String?
+  deletedAt      DateTime?
+  updatedBy      String?
+
+  @@index([name])
+  @@index([phone])
+  @@index([nationalId])
+}
+
+model Prescription {
+  id                 String             @id @default(uuid())
+  prescriptionNumber String?            @unique
+  branch             Branch             @relation(fields: [branchId], references: [id])
+  branchId           String
+  patient            Patient            @relation(fields: [patientId], references: [id])
+  patientId          String
+  issuedBy           String
+  doctorName         String?
+  hospitalName       String?
+  diagnosis          String?
+  externalId         String? // For Medlink integration
+  status             PrescriptionStatus @default(PENDING)
+  items              PrescriptionItem[]
+  sales              Sale[]
+  validUntil         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  createdBy          String?
+  updatedBy          String?
+
+  @@index([branchId])
+  @@index([patientId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([prescriptionNumber])
+}
+
+model PrescriptionItem {
+  id             String       @id @default(uuid())
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id])
+  prescriptionId String
+  product        Product      @relation(fields: [productId], references: [id])
+  productId      String
+  dosage         String
+  frequency      String?
+  duration       String?
+  quantity       Int
+  instructions   String?
+  dispensed      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([prescriptionId])
+  @@index([productId])
+}
+
+enum PrescriptionStatus {
+  PENDING
+  FULFILLED
+  PARTIALLY_FULFILLED
+  CANCELED
+}
+
+// Insurance Models
+model InsuranceProvider {
+  id               String           @id @default(uuid())
+  name             String
+  code             String           @unique
+  contact          String?
+  email            String?
+  address          String?
+  active           Boolean          @default(true)
+  coveragePlans    InsurancePlan[]
+  claims           InsuranceClaim[]
+  approvalRequired Boolean          @default(true)
+  paymentTermDays  Int              @default(30)
+  discountRate     Float?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  createdBy        String?
+  updatedBy        String?
+
+  @@index([name])
+  @@index([code])
+  @@index([active])
+}
+
+model InsurancePlan {
+  id                 String             @id @default(uuid())
+  name               String
+  code               String
+  provider           InsuranceProvider  @relation(fields: [providerId], references: [id])
+  providerId         String
+  coveragePercentage Float              @default(80.0)
+  annualLimit        Float?
+  requiresApproval   Boolean            @default(false)
+  patientCopay       Float              @default(0.0)
+  active             Boolean            @default(true)
+  coverageItems      PlanCoverageItem[]
+  patients           PatientInsurance[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  createdBy          String?
+  updatedBy          String?
+
+  @@unique([providerId, code])
+  @@index([providerId])
+  @@index([active])
+}
+
+model PlanCoverageItem {
+  id                 String        @id @default(uuid())
+  plan               InsurancePlan @relation(fields: [planId], references: [id])
+  planId             String
+  category           String?
+  product            Product?      @relation(fields: [productId], references: [id])
+  productId          String?
+  coveragePercentage Float?
+  maxQuantity        Int?
+  requiresApproval   Boolean       @default(false)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([planId])
+  @@index([productId])
+  @@index([category])
+}
+
+model PatientInsurance {
+  id                   String           @id @default(uuid())
+  patient              Patient          @relation(fields: [patientId], references: [id])
+  patientId            String
+  plan                 InsurancePlan    @relation(fields: [planId], references: [id])
+  planId               String
+  membershipNumber     String
+  primaryHolder        Boolean          @default(true)
+  relationshipToHolder String?
+  startDate            DateTime
+  endDate              DateTime?
+  status               InsuranceStatus  @default(ACTIVE)
+  verificationDate     DateTime?
+  verifiedBy           String?
+  claims               InsuranceClaim[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@unique([patientId, planId])
+  @@index([patientId])
+  @@index([planId])
+  @@index([membershipNumber])
+  @@index([status])
+}
+
+enum InsuranceStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+model InsuranceClaim {
+  id                    String               @id @default(uuid())
+  claimNumber           String               @unique
+  sale                  Sale                 @relation(fields: [saleId], references: [id])
+  saleId                String               @unique
+  provider              InsuranceProvider    @relation(fields: [providerId], references: [id])
+  providerId            String
+  patientInsurance      PatientInsurance     @relation(fields: [patientInsuranceId], references: [id])
+  patientInsuranceId    String
+  totalAmount           Float
+  coveredAmount         Float
+  patientResponsibility Float
+  status                ClaimStatus          @default(SUBMITTED)
+  submissionDate        DateTime             @default(now())
+  approvalDate          DateTime?
+  approvedBy            String?
+  rejectionReason       String?
+  paymentDate           DateTime?
+  paymentReference      String?
+  notes                 String?
+  claimItems            InsuranceClaimItem[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  createdBy             String?
+  updatedBy             String?
+
+  @@index([providerId])
+  @@index([patientInsuranceId])
+  @@index([status])
+  @@index([submissionDate])
+  @@index([claimNumber])
+}
+
+model InsuranceClaimItem {
+  id               String         @id @default(uuid())
+  claim            InsuranceClaim @relation(fields: [claimId], references: [id])
+  claimId          String
+  saleItem         SaleItem       @relation(fields: [saleItemId], references: [id])
+  saleItemId       String
+  approvedQuantity Int
+  claimedAmount    Float
+  approvedAmount   Float?
+  rejectionReason  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([claimId])
+  @@index([saleItemId])
+}
+
+enum ClaimStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  PARTIALLY_APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+// Stock Transfer Models
+model StockTransfer {
+  id             String         @id @default(uuid())
+  transferNumber String?        @unique
+  fromBranch     Branch         @relation("FromBranch", fields: [fromBranchId], references: [id])
+  fromBranchId   String
+  toBranch       Branch         @relation("ToBranch", fields: [toBranchId], references: [id])
+  toBranchId     String
+  status         TransferStatus @default(PENDING)
+  requestedBy    String
+  approvedBy     String?
+  notes          String?
+  items          TransferItem[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  createdBy      String?
+  updatedBy      String?
+
+  @@index([fromBranchId])
+  @@index([toBranchId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([transferNumber])
+}
+
+model TransferItem {
+  id          String        @id @default(uuid())
+  transfer    StockTransfer @relation(fields: [transferId], references: [id])
+  transferId  String
+  product     Product       @relation(fields: [productId], references: [id])
+  productId   String
+  quantity    Int
+  batchNumber String?
+  expiryDate  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([transferId])
+  @@index([productId])
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+// Audit and System Models
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+  updatedBy   String?
+
+  @@index([key])
+}
+
+// Reporting Models
+model Report {
+  id         String          @id @default(uuid())
+  name       String
+  type       ReportType
+  parameters Json?
+  schedule   ReportSchedule?
+  lastRun    DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  createdBy  String?
+  updatedBy  String?
+
+  @@index([type])
+  @@index([name])
+}
+
+enum ReportType {
+  SALES
+  INVENTORY
+  PRESCRIPTION
+  INSURANCE
+  FINANCIAL
+  AUDIT
+  CUSTOM
+}
+
+model ReportSchedule {
+  id         String            @id @default(uuid())
+  report     Report            @relation(fields: [reportId], references: [id])
+  reportId   String            @unique
+  frequency  ScheduleFrequency
+  recipients String[]
+  active     Boolean           @default(true)
+  nextRun    DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([reportId])
+  @@index([frequency])
+  @@index([active])
+}
+
+enum ScheduleFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+// Notification Models
+model Notification {
+  id        String           @id @default(uuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+  expiresAt DateTime?
+
+  @@index([userId])
+  @@index([read])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  SYSTEM
+  INVENTORY
+  PRESCRIPTION
+  INSURANCE
+  TRANSFER
+  EXPIRY
+  REORDER
+}
+
+// Purchasing Models
+model PurchaseOrder {
+  id           String         @id @default(uuid())
+  orderNumber  String         @unique
+  supplier     Supplier       @relation(fields: [supplierId], references: [id])
+  supplierId   String
+  branch       Branch         @relation(fields: [branchId], references: [id])
+  branchId     String
+  status       PurchaseStatus @default(DRAFT)
+  expectedDate DateTime?
+  receivedDate DateTime?
+  total        Float
+  notes        String?
+  items        PurchaseItem[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  createdBy    String?
+  updatedBy    String?
+
+  @@index([supplierId])
+  @@index([branchId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([createdAt])
+}
+
+model PurchaseItem {
+  id               String        @id @default(uuid())
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId  String
+  product          Product       @relation(fields: [productId], references: [id])
+  productId        String
+  quantity         Int
+  orderedQuantity  Int
+  receivedQuantity Int?
+  unitPrice        Float
+  total            Float
+  batchNumber      String?
+  expiryDate       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+enum PurchaseStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+// Financial Models
+model Payment {
+  id              String        @id @default(uuid())
+  paymentNumber   String        @unique
+  amount          Float
+  paymentMethod   PaymentMethod
+  referenceNumber String?
+  paymentDate     DateTime      @default(now())
+  notes           String?
+  sale            Sale?         @relation(fields: [saleId], references: [id])
+  saleId          String?       @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       String?
+  updatedBy       String?
+
+  @@index([paymentMethod])
+  @@index([paymentDate])
+  @@index([saleId])
+  @@index([paymentNumber])
+}
+
+model Expense {
+  id            String        @id @default(uuid())
+  expenseNumber String        @unique
+  branch        Branch        @relation(fields: [branchId], references: [id])
+  branchId      String
+  category      String
+  amount        Float
+  paymentMethod PaymentMethod
+  paymentDate   DateTime      @default(now())
+  description   String?
+  receipt       String? // URL to receipt image
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdBy     String?
+  updatedBy     String?
+
+  @@index([branchId])
+  @@index([category])
+  @@index([paymentDate])
+  @@index([paymentMethod])
+}
+
+// Integration Models
+model ExternalSystem {
+  id            String     @id @default(uuid())
+  name          String
+  type          SystemType
+  apiKey        String?
+  apiSecret     String?
+  baseUrl       String?
+  status        Boolean    @default(true)
+  lastSync      DateTime?
+  syncFrequency String? // Cron expression
+  settings      Json?
+  syncLogs      SyncLog[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  createdBy     String?
+  updatedBy     String?
+
+  @@index([type])
+  @@index([status])
+}
+
+enum SystemType {
+  MEDLINK
+  ACCOUNTING
+  INSURANCE
+  SUPPLIER
+  OTHER
+}
+
+model SyncLog {
+  id               String         @id @default(uuid())
+  system           ExternalSystem @relation(fields: [systemId], references: [id])
+  systemId         String
+  status           SyncStatus
+  startTime        DateTime       @default(now())
+  endTime          DateTime?
+  recordsProcessed Int?
+  errors           String?
+  details          Json?
+
+  @@index([systemId])
+  @@index([status])
+  @@index([startTime])
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+// Subscription and Multi-tenant Models
+model SubscriptionPlan {
+  id                String              @id @default(uuid())
+  name              String
+  description       String?
+  price             Float
+  billingCycle      BillingCycle
+  features          Json                // Stores feature limits as JSON
+  isActive          Boolean             @default(true)
+  trialDays         Int                 @default(0)
+  subscriptions     Subscription[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdBy         String?
+  updatedBy         String?
+
+  @@index([isActive])
+  @@index([billingCycle])
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  ANNUALLY
+}
+
+model Subscription {
+  id                String              @id @default(uuid())
+  pharmacy          Pharmacy            @relation(fields: [pharmacyId], references: [id])
+  pharmacyId        String              @unique  // One pharmacy has one subscription
+  plan              SubscriptionPlan    @relation(fields: [planId], references: [id])
+  planId            String
+  status            SubscriptionStatus  @default(ACTIVE)
+  startDate         DateTime            @default(now())
+  endDate           DateTime?
+  trialEndsAt       DateTime?
+  canceledAt        DateTime?
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd  DateTime
+  paymentMethod     PaymentMethod?
+  autoRenew         Boolean             @default(true)
+  paymentProvider   String?             // e.g., "stripe", "paypal"
+  paymentProviderId String?             // External ID from payment provider
+  invoices          Invoice[]
+  usageRecords      UsageRecord[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  createdBy         String?
+  updatedBy         String?
+
+  @@index([pharmacyId])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  EXPIRED
+}
+
+model Invoice {
+  id                String          @id @default(uuid())
+  invoiceNumber     String          @unique
+  subscription      Subscription    @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    String
+  amount            Float
+  tax               Float?
+  total             Float
+  status            InvoiceStatus   @default(PENDING)
+  dueDate           DateTime
+  paidDate          DateTime?
+  billingPeriodStart DateTime
+  billingPeriodEnd  DateTime
+  paymentMethod     PaymentMethod?
+  paymentReference  String?
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([invoiceNumber])
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELED
+  REFUNDED
+}
+
+model UsageRecord {
+  id                String        @id @default(uuid())
+  subscription      Subscription  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    String
+  featureKey        String        // e.g., "users", "products", "branches"
+  quantity          Int
+  recordedAt        DateTime      @default(now())
+  periodStart       DateTime
+  periodEnd         DateTime
+  createdAt         DateTime      @default(now())
+
+  @@index([subscriptionId])
+  @@index([featureKey])
+  @@index([recordedAt])
+  @@index([periodStart, periodEnd])
+}
+
+model PasswordResetToken {
+  token     String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
