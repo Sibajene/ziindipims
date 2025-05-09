@@ -15,9 +15,14 @@ async function bootstrap() {
   
   // Enable CORS for frontend requests
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://ziindi-frontend.onrender.com',  // <- Add this
+    ],
     credentials: true,
   });
+  
   
   // Serve static files from uploads directory
   // Fix static path to absolute path to backend/uploads
