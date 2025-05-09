@@ -1,9 +1,10 @@
+"use client"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card'
 import { Button } from '../../../../components/ui/button'
 import { Plus, Filter } from 'lucide-react'
-import { inventoryService } from '../../../../lib/api'
+import { getBatches, deleteBatch } from '../../../../lib/api/inventoryService'
 import { BatchesTable } from '../../../../components/inventory/BatchesTable'
 import { Input } from '../../../../components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select'
@@ -31,25 +32,25 @@ export default function BatchesPage() {
   const [isDeleting, setIsDeleting] = useState<boolean>(false)
   
   useEffect(() => {
-    const fetchBatches = async () => {
-      try {
-        setIsLoading(true)
-        const token = localStorage.getItem('token')
-        if (!token) {
-          router.push('/login')
-          return
-        }
-        
-        const data = await inventoryService.getBatches()
-        setBatches(data)
-        setFilteredBatches(data)
-      } catch (error) {
-        console.error('Failed to fetch batches', error)
-        setError('Failed to load batches. Please try again.')
-      } finally {
-        setIsLoading(false)
+  const fetchBatches = async () => {
+    try {
+      setIsLoading(true)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        router.push('/login')
+        return
       }
+      
+      const data = await getBatches('') // pharmacyId argument needs to be passed appropriately
+      setBatches(data)
+      setFilteredBatches(data)
+    } catch (error) {
+      console.error('Failed to fetch batches', error)
+      setError('Failed to load batches. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
+  }
     
     fetchBatches()
   }, [router])
@@ -118,10 +119,7 @@ export default function BatchesPage() {
         return
       }
       
-      await inventoryService.adjustStock(token, {
-        batchId: batchToDelete.id,
-        action: 'delete'
-      })
+      await deleteBatch(batchToDelete.id)
       
       // Remove the deleted batch from the state
       setBatches(batches.filter(b => b.id !== batchToDelete.id))
@@ -133,7 +131,7 @@ export default function BatchesPage() {
     } finally {
       setIsDeleting(false)
     }
-  }  
+  }
   if (isLoading) {
     return <div className="flex justify-center py-8">Loading...</div>
   }

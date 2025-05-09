@@ -1,4 +1,4 @@
-import { api } from '../api';
+import axiosClient from './axiosClient';
 
 export interface PrescriptionItem {
   id?: string;
@@ -60,46 +60,46 @@ export const prescriptionService = {
     }
     
     const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-    return await api.get(`/prescriptions${queryString}`);
+    return await axiosClient.get(`/prescriptions${queryString}`);
   },
   
   // Get a single prescription by ID
   getPrescription: async (id: string) => {
-    return await api.get(`/prescriptions/${id}`);
+    return await axiosClient.get(`/prescriptions/${id}`);
   },
   
   // Create a new prescription
   createPrescription: async (data: any) => {
-    return await api.post('/prescriptions', data);
+    return await axiosClient.post('/prescriptions', data);
   },
   
   // Update a prescription
   updatePrescription: async (id: string, data: any) => {
-    return await api.put(`/prescriptions/${id}`, data);
+    return await axiosClient.put(`/prescriptions/${id}`, data);
   },
   
   // Add an item to a prescription
   addPrescriptionItem: async (prescriptionId: string, itemData: any) => {
-    return await api.post(`/prescriptions/${prescriptionId}/items`, itemData);
+    return await axiosClient.post(`/prescriptions/${prescriptionId}/items`, itemData);
   },
   
   // Update a prescription item
   updatePrescriptionItem: async (itemId: string, itemData: any) => {
-    return await api.put(`/prescriptions/items/${itemId}`, itemData);
+    return await axiosClient.put(`/prescriptions/items/${itemId}`, itemData);
   },
   
   // Remove a prescription item
   removePrescriptionItem: async (itemId: string) => {
-    return await api.delete(`/prescriptions/items/${itemId}`);
+    return await axiosClient.delete(`/prescriptions/items/${itemId}`);
   },
   
   // Cancel a prescription
   cancelPrescription: async (id: string) => {
-    return await api.put(`/prescriptions/${id}/cancel`, {});
+    return await axiosClient.put(`/prescriptions/${id}/cancel`, {});
   },
   
   // Dispense prescription items
   dispensePrescriptionItems: async (prescriptionId: string, items: DispenseItemData[]) => {
-    return await api.post(`/prescriptions/${prescriptionId}/dispense`, { items });
+    return await axiosClient.post(`/prescriptions/${prescriptionId}/dispense`, { items });
   }
 };

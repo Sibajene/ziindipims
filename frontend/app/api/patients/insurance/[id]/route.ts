@@ -1,49 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
-import axios from 'axios'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+
+const forwardAuth = (request: NextRequest) => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+  const authHeader = request.headers.get('authorization')
+  if (authHeader) {
+    headers['Authorization'] = authHeader
+  } else {
+    const cookies = request.cookies
+    const token = cookies.get('token')?.value
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+  }
+  return headers
+}
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
-    const body = await request.json();
-    
-    // Get auth token from cookies or headers
-    const authHeader = request.headers.get('authorization');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    } else {
-      // Try to get token from cookies
-      const cookies = request.cookies;
-      const token = cookies.get('token')?.value;
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    const id = params.id
+    const body = await request.json()
+    const headers = forwardAuth(request)
+    const response = await fetch(`${API_URL}/patients/insurance/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(body)
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Backend error: ${response.status} ${errorText}`)
     }
-    
-    // Forward the request to the backend
-    const response = await axios.put(`${API_URL}/patients/insurance/${id}`, body, { headers });
-    
-    // Return the response from the backend
-    return NextResponse.json(response.data);
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error: any) {
-    console.error(`Error updating insurance plan ${params.id}:`, error.message);
-    
     return NextResponse.json(
-      { 
-        error: 'Failed to update insurance plan', 
-        details: error.message,
-        serverError: error.response?.data 
-      },
-      { status: error.response?.status || 500 }
-    );
+      { error: 'Failed to update insurance plan', details: error.message },
+      { status: 500 }
+    )
   }
 }
 
@@ -52,40 +51,22 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
-    
-    // Get auth token from cookies or headers
-    const authHeader = request.headers.get('authorization');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    } else {
-      // Try to get token from cookies
-      const cookies = request.cookies;
-      const token = cookies.get('token')?.value;
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+    const id = params.id
+    const headers = forwardAuth(request)
+    const response = await fetch(`${API_URL}/patients/insurance/${id}`, {
+      method: 'DELETE',
+      headers
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Backend error: ${response.status} ${errorText}`)
     }
-    
-    // Forward the request to the backend
-    const response = await axios.delete(`${API_URL}/patients/insurance/${id}`, { headers });
-    
-    // Return the response from the backend
-    return NextResponse.json(response.data);
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error: any) {
-    console.error(`Error deleting insurance plan ${params.id}:`, error.message);
-    
     return NextResponse.json(
-      { 
-        error: 'Failed to delete insurance plan', 
-        details: error.message,
-        serverError: error.response?.data 
-      },
-      { status: error.response?.status || 500 }
-    );
+      { error: 'Failed to delete insurance plan', details: error.message },
+      { status: 500 }
+    )
   }
 }

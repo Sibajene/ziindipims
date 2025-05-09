@@ -8,8 +8,10 @@ const apiClient = axios.create({
 })
 
 // Request interceptor to add Authorization header
+import { InternalAxiosRequestConfig } from 'axios'
+
 apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().token
     if (token && config.headers) {
       config.headers['Authorization'] = `Bearer ${token}`
@@ -20,10 +22,14 @@ apiClient.interceptors.request.use(
 )
 
 // Response interceptor to handle 401 errors and refresh token
+interface RetryRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean
+}
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config
+    const originalRequest = error.config as RetryRequestConfig
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
       try {

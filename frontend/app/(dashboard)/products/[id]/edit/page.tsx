@@ -94,7 +94,7 @@ export default function EditProductPage() {
         const productData = await productService.getProduct(token, params.id as string)
         
         // Fetch suppliers for dropdown
-        const suppliersData = await supplierService.getSuppliers(token)
+        const suppliersData = await supplierService.getSuppliers()
         setSuppliers(suppliersData)
         
         // Set form values from product data

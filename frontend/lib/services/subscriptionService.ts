@@ -1,5 +1,5 @@
 import axios from 'axios';
-import api from '../api';
+import apiClient from '../api/apiClient';
 
 // Base URL configuration
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -22,7 +22,7 @@ export const getCurrentSubscription = async (pharmacyId: string) => {
       return null;
     }
 
-    const response = await api.get(`/subscriptions/current`, {
+    const response = await apiClient.get(`/subscriptions/current`, {
       params: { pharmacyId }
     });
     return response.data;
@@ -52,7 +52,7 @@ export const getSubscriptionHistory = async (pharmacyId: string) => {
       return [];
     }
 
-    const response = await api.get(`/subscriptions/history`, {
+    const response = await apiClient.get(`/subscriptions/history`, {
       params: { pharmacyId }
     });
     return response.data;
@@ -65,7 +65,7 @@ export const getSubscriptionHistory = async (pharmacyId: string) => {
 // Create a new subscription
 export const createSubscription = async (data: any) => {
   try {
-    const response = await api.post('/subscriptions', data);
+    const response = await apiClient.post('/subscriptions', data);
     return response.data;
   } catch (error) {
     console.error('Error creating subscription:', error);
@@ -76,7 +76,7 @@ export const createSubscription = async (data: any) => {
 // Update an existing subscription
 export const updateSubscription = async (id: string, data: any) => {
   try {
-    const response = await api.put(`/subscriptions/${id}`, data);
+    const response = await apiClient.put(`/subscriptions/${id}`, data);
     return response.data;
   } catch (error) {
     console.error('Error updating subscription:', error);
@@ -87,7 +87,7 @@ export const updateSubscription = async (id: string, data: any) => {
 // Cancel a subscription
 export const cancelSubscription = async (id: string) => {
   try {
-    const response = await api.post(`/subscriptions/${id}/cancel`);
+    const response = await apiClient.post(`/subscriptions/${id}/cancel`);
     return response.data;
   } catch (error) {
     console.error('Error canceling subscription:', error);

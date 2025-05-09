@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { formatCurrency, formatDate } from '../../../lib/utils'
 import { Plus, Search, Filter, AlertTriangle, Package } from 'lucide-react'
 import { useAuthStore } from '../../../lib/stores/authStore'
-import { getInventoryBatches } from '../../../lib/api/inventoryService'
+import { getBatches } from '../../../lib/api/inventoryService'
 
 interface InventoryItem {
   id: string
@@ -54,7 +54,7 @@ export default function InventoryPage() {
           return
         }
         
-        const data = await getInventoryBatches(user.pharmacyId)
+        const data = await getBatches(user.pharmacyId)
         
         const mappedInventory = data.map((item: any) => {
           let status: InventoryItem['status'] = 'Good'

@@ -138,13 +138,17 @@ if (currentInsurance && isEditDialogOpen) {
 const onAddSubmit = async (values: InsuranceFormValues) => {
 try {
   setIsSubmitting(true)
+  const selectedPlan = insurancePlans.find(plan => plan.id === values.planId)
+  if (!selectedPlan) {
+    throw new Error("Selected insurance plan not found")
+  }
   const data = {
-    planId: values.planId,
-    membershipNumber: values.membershipNumber,
-    primaryHolder: values.primaryHolder,
-    relationshipToHolder: values.relationshipToHolder,
+    providerId: selectedPlan.providerId,
+    policyNumber: values.membershipNumber,
+    coverageType: selectedPlan.name,
     startDate: values.startDate,
     endDate: values.endDate,
+    status: "ACTIVE", // or get from form if needed
   }
   const newInsurance = await addPatientInsurance(patientId, data)
   setPatientInsurance([...patientInsurance, newInsurance])

@@ -23,7 +23,7 @@ import {
 } from "../../../../components/ui/select"
 import { Loader2 } from "lucide-react"
 import { useToast } from "../../../../components/ui/use-toast"
-import { createPatient, CreatePatientData } from "../../../../lib/api/patients"
+import { createPatient } from "../../../../lib/api/patients"
 
 // Form schema for patient registration
 const patientSchema = z.object({

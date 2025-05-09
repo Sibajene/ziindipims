@@ -13,7 +13,7 @@ import {
 } from '../../../../components/ui/table';
 import { Badge } from '../../../../components/ui/badge';
 import { toast } from '../../../../components/ui/use-toast';
-import api from '../../../../lib/api';
+import { api } from '../../../../lib/axiosClient';
 import { formatCurrency, formatDate } from '../../../../lib/utils';
 import { Printer, ArrowLeft, Download, AlertTriangle } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
@@ -89,9 +89,9 @@ const SaleReceiptPage = () => {
   }, [params.id]);
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    content: () => printRef.current!,
     documentTitle: `Receipt-${sale?.invoiceNumber || 'Sale'}`,
-  });
+  } as any);
 
   const handleCancelSale = async () => {
     if (!sale || sale.paymentStatus === 'CANCELLED') return;

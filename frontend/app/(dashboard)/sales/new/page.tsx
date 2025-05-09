@@ -16,13 +16,13 @@ import {
 import { useToast } from '../../../../components/ui/use-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs'
 import { Search, Plus, Trash, ArrowLeft, Save } from 'lucide-react'
-import api, { 
-  inventoryService, 
-  prescriptionService, 
-  patientService, 
-  branchService, 
-  userService 
-} from '../../../../lib/api'
+import api from '../../../../lib/api'
+import * as inventoryService from '../../../../lib/api/inventoryService'
+import { prescriptionService } from '../../../../lib/api/prescriptionService'
+import * as patientService from '../../../../lib/api/patients'
+import { branchService } from '../../../../lib/api/branchService'
+import { userService } from '../../../../lib/api/userService'
+import axiosClient from '../../../../lib/api/axiosClient'
 import { formatCurrency } from '../../../../lib/utils'
 
 interface Branch {
@@ -135,31 +135,32 @@ export default function NewSalePage() {
       try {
         setIsLoading(true)
         
-        // Use the service functions instead of direct API calls
-        const [branchesRes, usersRes, batchesData, patientsData, prescriptionsData] = await Promise.all([
-          branchService.getAllBranches(),
+        // Fetch branches first
+        const branchesRes = await branchService.getAllBranches();
+        // Fetch other data
+        const [usersRes, batchesData, patientsData, prescriptionsData] = await Promise.all([
           userService.getAllUsers(),
-          inventoryService.getBatches({ inStock: true }),
+          inventoryService.getBatches(branchesRes[0]?.id || ''),
           patientService.getPatients(),
           prescriptionService.getPrescriptions({ status: 'PENDING,PARTIALLY_FULFILLED' })
-        ])
+        ]);
         
         setBranches(branchesRes.data)
         setUsers(usersRes.data)
-        setBatches(batchesData)
-        setFilteredBatches(batchesData)
-        setPatients(patientsData)
-        setFilteredPatients(patientsData)
-        setPrescriptions(prescriptionsData)
-        setFilteredPrescriptions(prescriptionsData)
+        setBatches(batchesData.data)
+        setFilteredBatches(batchesData.data)
+        setPatients(patientsData.data)
+        setFilteredPatients(patientsData.data)
+        setPrescriptions(prescriptionsData.data)
+        setFilteredPrescriptions(prescriptionsData.data)
         
         // Set default branch and user if available
-        if (branchesRes.data.length > 0) {
-          setBranchId(branchesRes.data[0].id)
+        if (branchesRes.length > 0) {
+          setBranchId(branchesRes[0].id)
         }
         
-        if (usersRes.data.length > 0) {
-          setSoldById(usersRes.data[0].id)
+        if (usersRes.length > 0) {
+          setSoldById(usersRes[0].id)
         }
       } catch (error) {
         console.error('Failed to fetch initial data', error)
@@ -490,26 +491,26 @@ export default function NewSalePage() {
     
     setIsSubmitting(true)
     
-    try {
-      const response = await api.post('/sales', saleData)
-      
-      toast({
-        title: 'Sale Completed',
-        description: `Invoice #${response.data.invoiceNumber} has been created.`,
-      })
-      
-      // Redirect to sale details page
-      router.push(`/sales/${response.data.id}`)
-    } catch (error: any) {
-      console.error('Failed to create sale', error)
-      toast({
-        title: 'Error',
-        description: error.response?.data?.message || 'Failed to create sale. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+      try {
+        const response = await axiosClient.post('/sales', saleData)
+        
+        toast({
+          title: 'Sale Completed',
+          description: `Invoice #${response.data.invoiceNumber} has been created.`,
+        })
+        
+        // Redirect to sale details page
+        router.push(`/sales/${response.data.id}`)
+      } catch (error: any) {
+        console.error('Failed to create sale', error)
+        toast({
+          title: 'Error',
+          description: error.response?.data?.message || 'Failed to create sale. Please try again.',
+          variant: 'destructive',
+        })
+      } finally {
+        setIsSubmitting(false)
+      }
   }
   
   if (isLoading) {

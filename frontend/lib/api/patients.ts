@@ -27,6 +27,10 @@ export interface Patient {
   emergencyContact?: string
   allergies?: string
   medicalConditions?: string
+  status?: 'active' | 'inactive'
+  lastVisit?: string
+  insuranceProvider?: string
+  insuranceNumber?: string
   createdAt: string
   updatedAt: string
 }

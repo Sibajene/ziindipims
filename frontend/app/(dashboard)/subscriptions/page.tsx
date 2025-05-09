@@ -107,7 +107,7 @@ const SubscriptionsPage: React.FC = () => {
 
         // Fetch available plans
         try {
-          const plans = await subscriptionService.getAvailablePlans(pharmacyId);
+          const plans = await subscriptionService.getAvailablePlans();
           setAvailablePlans(plans);
         } catch (error: any) {
           if (error.response?.status === 403) {

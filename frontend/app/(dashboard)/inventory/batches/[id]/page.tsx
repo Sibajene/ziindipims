@@ -55,7 +55,7 @@ export default function BatchDetailsPage() {
         }
         
         // Fetch batch details
-        const batchData = await inventoryService.getBatch(token, batchId)
+        const batchData = await inventoryService.getBatch(batchId)
         setBatch(batchData)
         
         // Set form values
@@ -107,13 +107,13 @@ export default function BatchDetailsPage() {
       }
       
       // Update the batch
-      await inventoryService.updateBatch(token, batchId, batchData)
+      await inventoryService.updateBatch(batchId, batchData)
       
       setSuccessMessage('Batch updated successfully')
       setIsEditing(false)
       
       // Refresh batch data
-      const updatedBatch = await inventoryService.getBatch(token, batchId)
+      const updatedBatch = await inventoryService.getBatch(batchId)
       setBatch(updatedBatch)
     } catch (error) {
       console.error('Failed to update batch', error)
@@ -135,7 +135,7 @@ export default function BatchDetailsPage() {
       }
       
       // Delete the batch
-      await inventoryService.deleteBatch(token, batchId)
+      await inventoryService.deleteBatch(batchId)
       
       setSuccessMessage('Batch deleted successfully')
       

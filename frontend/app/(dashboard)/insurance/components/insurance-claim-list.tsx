@@ -58,6 +58,18 @@ import { insuranceApi } from "../../../../lib/api/insurance"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+
+// Local extended ClaimStatus enum to include additional statuses
+enum LocalClaimStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+  SUBMITTED = 'SUBMITTED',
+  UNDER_REVIEW = 'UNDER_REVIEW',
+  PARTIALLY_APPROVED = 'PARTIALLY_APPROVED'
+}
 import { format } from "date-fns"
 
 // Define the claim status badge component
@@ -101,8 +113,8 @@ const ClaimStatusBadge = ({ status }: { status: string }) => {
   }
 }
 
-// Define the claim interface
-interface InsuranceClaim {
+// Define the local claim interface
+interface LocalInsuranceClaim {
   id: string
   claimNumber: string
   patientId: string
@@ -128,7 +140,7 @@ interface InsuranceClaim {
 }
 
 export function InsuranceClaimList() {
-  const [claims, setClaims] = useState<InsuranceClaim[]>([])
+  const [claims, setClaims] = useState<LocalInsuranceClaim[]>([])
   const [providers, setProviders] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -139,24 +151,35 @@ export function InsuranceClaimList() {
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   })
-  const [selectedClaim, setSelectedClaim] = useState<InsuranceClaim | null>(null)
+  const [selectedClaim, setSelectedClaim] = useState<LocalInsuranceClaim | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const { toast } = useToast()
 
   // Form schema for updating claim status
   const updateClaimSchema = z.object({
-    status: z.enum(["SUBMITTED", "UNDER_REVIEW", "APPROVED", "PARTIALLY_APPROVED", "REJECTED", "PAID", "CANCELLED"]),
+    status: z.nativeEnum(LocalClaimStatus),
     notes: z.string().optional(),
   })
 
   const form = useForm<z.infer<typeof updateClaimSchema>>({
     resolver: zodResolver(updateClaimSchema),
     defaultValues: {
-      status: "SUBMITTED",
+      status: LocalClaimStatus.SUBMITTED,
       notes: "",
     },
   })
+
+  // Transform fetched claims to local interface
+  const transformClaims = (claimsData: any[]): LocalInsuranceClaim[] => {
+    return claimsData.map(claim => ({
+      ...claim,
+      patientName: claim.patient?.name || "",
+      providerName: claim.provider?.name || "",
+      planName: claim.plan?.name || "",
+      items: claim.items || []
+    }))
+  }
 
   // Fetch claims and providers on component mount
   useEffect(() => {
@@ -174,7 +197,7 @@ export function InsuranceClaimList() {
           startDate: dateRange.start,
           endDate: dateRange.end
         })
-        setClaims(claimsData)
+        setClaims(transformClaims(claimsData))
       } catch (err) {
         console.error("Failed to fetch insurance data:", err)
         setError("Failed to load insurance claims")
@@ -199,13 +222,13 @@ export function InsuranceClaimList() {
   })
 
   // Handle claim selection for viewing details
-  const handleViewClaim = (claim: InsuranceClaim) => {
+  const handleViewClaim = (claim: LocalInsuranceClaim) => {
     setSelectedClaim(claim)
     setIsDialogOpen(true)
     
     // Set form default values based on selected claim
     form.reset({
-      status: claim.status as any,
+      status: claim.status as LocalClaimStatus,
       notes: "",
     })
   }
@@ -219,7 +242,7 @@ export function InsuranceClaimList() {
       
       // Call API to update claim status
       await insuranceApi.updateClaimStatus(selectedClaim.id, {
-        status: values.status,
+        status: values.status as any,
         notes: values.notes || undefined
       })
       

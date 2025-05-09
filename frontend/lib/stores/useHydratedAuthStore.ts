@@ -10,15 +10,12 @@ export function useHydratedAuthStore() {
       setHydrated(true);
       return;
     }
-    const unsub = useAuthStore.subscribe(
-      (state) => state.isHydrated,
-      (value) => {
-        if (value) {
-          setHydrated(true);
-          unsub();
-        }
+    const unsub = useAuthStore.subscribe((state) => {
+      if (state.isHydrated) {
+        setHydrated(true);
+        unsub();
       }
-    );
+    });
     return () => unsub();
   }, [isHydrated]);
 

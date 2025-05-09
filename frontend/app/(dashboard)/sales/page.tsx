@@ -17,7 +17,7 @@ import {
 import { DatePickerWithRange } from '../../../components/ui/date-range-picker'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs'
 import { toast } from '../../../components/ui/use-toast'
-import api from '../../../lib/api'
+import {api} from '../../../lib/axiosClient'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +46,10 @@ interface Sale {
   saleItems: {
     id: string
   }[]
+  branch?: {
+    id: string
+    name: string
+  }
 }
 
 interface Branch {
@@ -82,7 +86,7 @@ export default function SalesPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('')
   const [branchFilter, setBranchFilter] = useState('')
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>({
+  const [dateRange, setDateRange] = useState<{ from: Date; to?: Date } | undefined>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date(),
   })

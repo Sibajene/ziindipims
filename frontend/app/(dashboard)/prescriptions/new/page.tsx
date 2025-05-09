@@ -107,7 +107,7 @@ export default function CreatePrescriptionPage() {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const [patientsData, branchesData, productsData] = await Promise.all([
         getPatients(),
-        branchService.getBranches(token || ''), // Pass token if available
+        branchService.getAllBranches(), // Corrected method name
         productService.getProducts(token || ''), // Pass token if available
       ]);
         

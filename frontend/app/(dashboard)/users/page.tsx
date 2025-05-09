@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { api } from '../../../lib/api'
+import api from '../../../lib/api'
 import { userService } from '../../../lib/api/userService'
+import { branchService } from '../../../lib/api/branchService'
 import { 
   Table, 
   TableBody, 
@@ -134,8 +135,8 @@ export default function UsersPage() {
     const fetchBranches = async () => {
       try {
         // Assuming you have a branchService in your API
-        const response = await api.get('/branches')
-        setBranches(response.data)
+      const response = await branchService.getAllBranches()
+      setBranches(response)
       } catch (err) {
         console.error('Error fetching branches:', err)
         // Set branches to empty array if there's an error
@@ -355,7 +356,7 @@ export default function UsersPage() {
   // Toggle user active status
   const toggleUserStatus = async (user: User) => {
     try {
-      await api.put(`/users/${user.id}`, { isActive: !user.isActive })
+      await userService.updateUser(user.id, { isActive: !user.isActive })
       fetchUsers()
     } catch (error) {
       console.error('Error toggling user status:', error)

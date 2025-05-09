@@ -24,8 +24,9 @@ const BranchDetailPage: React.FC = () => {
       try {
         setIsLoading(true)
         setError(null)
-        // Remove the token parameter - it's not needed based on your other service calls
-        const data = await branchService.getById(params.id)
+        // Normalize params.id to string if it is an array
+        const branchId = Array.isArray(params.id) ? params.id[0] : params.id
+        const data = await branchService.getById(branchId)
         setBranch(data)
       } catch (err) {
         console.error("Error fetching branch:", err)

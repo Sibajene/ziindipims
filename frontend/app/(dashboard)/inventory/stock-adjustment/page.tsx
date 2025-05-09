@@ -10,12 +10,15 @@ import { Textarea } from '../../../../components/ui/textarea'
 import { ArrowLeft } from 'lucide-react'
 import { productService } from '../../../../lib/api/productService'
 import { inventoryService } from '../../../../lib/api'
+import { useAuthStore } from '../../../../lib/stores/authStore'
 
 export default function StockAdjustmentPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const productId = searchParams.get('productId')
-  
+  const { user } = useAuthStore()
+  const pharmacyId = user?.pharmacyId
+
   const [product, setProduct] = useState<any>(null)
   const [batches, setBatches] = useState<any[]>([])
   const [selectedBatchId, setSelectedBatchId] = useState<string>('')
@@ -40,22 +43,23 @@ export default function StockAdjustmentPage() {
         }
         
         // If productId is provided, fetch the product details
-        if (productId) {
-          const productData = await productService.getProduct(token, productId)
-          setProduct(productData)
-          
-          if (productData.batches && productData.batches.length > 0) {
-            setBatches(productData.batches)
-            setSelectedBatchId(productData.batches[0].id)
+          if (productId) {
+            const productData = await productService.getProduct(token, productId)
+            setProduct(productData)
+            
+            if (productData.batches && productData.batches.length > 0) {
+              setBatches(productData.batches)
+              setSelectedBatchId(productData.batches[0].id)
+            }
+          } else {
+            // Remove the incorrect call with { inStock: true }
+            // You may want to fetch all batches without filter or handle differently
+            const batchesData = await inventoryService.getBatches(pharmacyId || '')
+            setBatches(batchesData)
+            if (batchesData.length > 0) {
+              setSelectedBatchId(batchesData[0].id)
+            }
           }
-        } else {
-          // Otherwise, fetch all batches
-          const batchesData = await inventoryService.getBatches({ inStock: true })
-          setBatches(batchesData)
-          if (batchesData.length > 0) {
-            setSelectedBatchId(batchesData[0].id)
-          }
-        }
       } catch (error) {
         console.error('Failed to fetch data', error)
         setError("Failed to load data. Please try again.")
@@ -65,7 +69,7 @@ export default function StockAdjustmentPage() {
     }
     
     fetchData()
-  }, [productId, router])
+  }, [productId, router, pharmacyId])
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,7 +95,7 @@ export default function StockAdjustmentPage() {
         reason
       }
       
-      await inventoryService.adjustStock(token, adjustmentData)
+      await inventoryService.adjustStock(adjustmentData)
       
       setSuccessMessage('Stock adjustment completed successfully')
       
@@ -108,7 +112,7 @@ export default function StockAdjustmentPage() {
                 setBatches(productData.batches)
               }
             } else {
-              const batchesData = await inventoryService.getBatches({ inStock: true })
+              const batchesData = await inventoryService.getBatches(pharmacyId || '')
               setBatches(batchesData)
             }
             

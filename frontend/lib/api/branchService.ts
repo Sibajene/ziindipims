@@ -49,5 +49,9 @@ export const branchService = {
       console.error(`Error deleting branch with ID ${id}:`, error);
       throw error;
     }
+  },
+
+  getAllBranches: async () => {
+    return await branchService.get();
   }
 };

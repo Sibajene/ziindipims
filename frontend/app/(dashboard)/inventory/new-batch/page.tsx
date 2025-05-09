@@ -7,7 +7,7 @@ import { Input } from '../../../../components/ui/input'
 import { ArrowLeft, Save } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select'
 import { productService } from '../../../../lib/api/productService'
-import { createInventoryBatch } from '../../../../lib/api/inventoryService'
+import { createBatch } from '../../../../lib/api/inventoryService'
 import { branchService } from '../../../../lib/api/branchService'
 import { format } from 'date-fns'
 import { Calendar } from '../../../../components/ui/calendar'
@@ -121,7 +121,7 @@ export default function NewBatchPage() {
       
       try {
         // Create the batch
-        const response = await createInventoryBatch(batchData);
+        const response = await createBatch(batchData);
         console.log('Response from server:', response);
         setSuccessMessage('Batch created successfully');
         

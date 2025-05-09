@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../../components
 import { formatCurrency } from '../../../../lib/utils'
 import { ArrowLeft, Edit, Trash, Plus } from 'lucide-react'
 import { productService } from '../../../../lib/api/productService'
+import * as inventoryService from '../../../../lib/api/inventoryService'
 
 interface Product {
   id: string
@@ -126,7 +127,7 @@ export default function ProductDetailPage() {
         router.push('/login');
         return;
       }
-      const response = await productService.createBatch(token, data);
+      const response = await inventoryService.createBatch(data);
       // Handle success
       console.log('Batch created successfully:', response);
       // Reset form or show success message

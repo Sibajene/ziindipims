@@ -45,13 +45,14 @@ export default function PatientsPage() {
     fetchPatients()
   }, [searchQuery, toast])
   
-  const filteredPatients = patients.filter(patient => {
-    // First apply search filter
-    const matchesSearch = 
-      patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.phone.includes(searchQuery) ||
-      (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (patient.insuranceNumber && patient.insuranceNumber.includes(searchQuery));
+    const filteredPatients = patients.filter(patient => {
+      // First apply search filter
+      const matchesSearch = 
+        patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.phone.includes(searchQuery) ||
+        (patient.email && patient.email.toLowerCase().includes(searchQuery.toLowerCase())) 
+        // Removed insuranceNumber check because it does not exist on Patient type
+        // (patient.insuranceNumber && patient.insuranceNumber.includes(searchQuery));
     
     // Then apply tab filter
     if (!matchesSearch) return false;

@@ -93,8 +93,8 @@ export default function NewProductPage() {
         const token = localStorage.getItem('token')
         if (!token) return
         
-        // Use the supplier service to fetch suppliers with token
-        const data = await supplierService.getSuppliers(token)
+        // Use the supplier service to fetch suppliers without token argument
+        const data = await supplierService.getSuppliers()
         setSuppliers(data)
       } catch (error) {
         console.error('Failed to fetch suppliers', error)

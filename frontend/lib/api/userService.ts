@@ -14,6 +14,11 @@ export const userService = {
     }
   },
 
+  // Alias for getUsers
+  getAllUsers: async () => {
+    return await userService.getUsers();
+  },
+
   // Get user by ID
   getUserById: async (id: string) => {
     try {

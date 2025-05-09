@@ -1,5 +1,5 @@
 import axios from 'axios';
-import api from '../api';
+import apiClient from '../api/apiClient';
 
 // Get user notifications with proper error handling
 export const getUserNotifications = async (userId: string) => {
@@ -11,7 +11,7 @@ export const getUserNotifications = async (userId: string) => {
       return [];
     }
 
-    const response = await api.get(`/notifications/user/${userId}`);
+    const response = await apiClient.get(`/notifications/user/${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -33,7 +33,7 @@ export const getUserNotifications = async (userId: string) => {
 // Mark notification as read
 export const markNotificationAsRead = async (notificationId: string) => {
   try {
-    const response = await api.put(`/notifications/${notificationId}/read`);
+    const response = await apiClient.put(`/notifications/${notificationId}/read`);
     return response.data;
   } catch (error) {
     console.error('Error marking notification as read:', error);
@@ -44,7 +44,7 @@ export const markNotificationAsRead = async (notificationId: string) => {
 // Mark all notifications as read
 export const markAllNotificationsAsRead = async (userId: string) => {
   try {
-    const response = await api.put(`/notifications/user/${userId}/read-all`);
+    const response = await apiClient.put(`/notifications/user/${userId}/read-all`);
     return response.data;
   } catch (error) {
     console.error('Error marking all notifications as read:', error);

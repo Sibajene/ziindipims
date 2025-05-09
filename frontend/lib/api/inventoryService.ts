@@ -1,11 +1,11 @@
-// Inventory service for handling inventory-related API calls
+import axiosClient from './axiosClient';
 
 /**
  * Fetches inventory batches for a specific pharmacy
  * @param pharmacyId The ID of the pharmacy to fetch inventory for
  * @returns Promise with the inventory batch data
  */
-export async function getInventoryBatches(pharmacyId: string) {
+export async function getBatches(pharmacyId: string) {
   const token = localStorage.getItem('token');
   
   if (!token) {
@@ -32,7 +32,7 @@ export async function getInventoryBatches(pharmacyId: string) {
  * @param batchId The ID of the batch to fetch
  * @returns Promise with the batch data
  */
-export async function getInventoryBatch(batchId: string) {
+export async function getBatch(batchId: string) {
   const token = localStorage.getItem('token');
   
   if (!token) {
@@ -52,14 +52,12 @@ export async function getInventoryBatch(batchId: string) {
   return response.json();
 }
 
-import axiosClient from './axiosClient'
-
 /**
  * Creates a new inventory batch
  * @param batchData The data for the new batch
  * @returns Promise with the created batch data
  */
-export async function createInventoryBatch(batchData: any) {
+export async function createBatch(batchData: any) {
   try {
     const response = await axiosClient.post('/inventory/batches', batchData)
     return response.data
@@ -75,7 +73,7 @@ export async function createInventoryBatch(batchData: any) {
  * @param batchData The updated data for the batch
  * @returns Promise with the updated batch data
  */
-export async function updateInventoryBatch(batchId: string, batchData: any) {
+export async function updateBatch(batchId: string, batchData: any) {
   const token = localStorage.getItem('token');
   
   if (!token) {
@@ -105,7 +103,7 @@ export async function updateInventoryBatch(batchId: string, batchData: any) {
  * @param batchId The ID of the batch to delete
  * @returns Promise with the deleted batch data
  */
-export async function deleteInventoryBatch(batchId: string) {
+export async function deleteBatch(batchId: string) {
   const token = localStorage.getItem('token');
   
   if (!token) {
@@ -131,7 +129,7 @@ export async function deleteInventoryBatch(batchId: string) {
  * @param transferData The data for the transfer
  * @returns Promise with the transfer result
  */
-export async function transferInventory(transferData: any) {
+export async function adjustStock(transferData: any) {
   const token = localStorage.getItem('token');
   
   if (!token) {
