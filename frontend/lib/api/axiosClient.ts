@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
 // Check if this base URL is correct
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '') : 'http://localhost:3001') + '/api';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
